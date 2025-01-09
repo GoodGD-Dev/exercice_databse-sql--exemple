@@ -1,84 +1,69 @@
--- Criando o banco de dados
-CREATE DATABASE redeSocialDB;
+# Tabelas e Dados
 
--- Conectando ao banco de dados criado
--- (Este comando funciona apenas em PostgreSQL, remova caso não seja necessário)
--- \c redeSocialDB;
-
--- Criando o esquema
-CREATE SCHEMA rede_social;
-
--- Criando a tabela de usuários
-CREATE TABLE "rede_social".usuarios (
-    usuario_id SERIAL PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    senha_hash VARCHAR(255) NOT NULL,
-    data_nascimento DATE NOT NULL,
-    genero VARCHAR(50),
-    bio TEXT,
-    foto_perfil VARCHAR(255),
-    cidade VARCHAR(100),
-    estado VARCHAR(50),
-    pais VARCHAR(50),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo', 'banido'))
+# Tabela Customer
+CREATE TABLE Customer (
+    CustomerID SERIAL PRIMARY KEY,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    Email VARCHAR(100) NOT NULL UNIQUE,
+    Phone VARCHAR(15),
+    Address VARCHAR(255),
+    DateOfBirth DATE
 );
 
--- Criando a tabela de publicações
-CREATE TABLE "rede_social".publicacoes (
-    publicacao_id SERIAL PRIMARY KEY,
-    usuario_id INTEGER NOT NULL,
-    conteudo TEXT NOT NULL,
-    imagem VARCHAR(255),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP,
-    visibilidade VARCHAR(20) DEFAULT 'publico' CHECK (visibilidade IN ('publico', 'privado', 'amigos')),
-    FOREIGN KEY (usuario_id) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE
+# Inserindo dados na tabela Customer
+INSERT INTO Customer (FirstName, LastName, Email, Phone, Address, DateOfBirth) 
+VALUES 
+('Alice', 'Johnson', 'alice.johnson@example.com', '555123456', '789 Pine St', '1985-05-15'),
+('Bob', 'Brown', 'bob.brown@example.com', '555987654', '321 Oak St', '1992-11-30');
+
+# Tabela Product
+CREATE TABLE Product (
+    ProductID SERIAL PRIMARY KEY,
+    ProductName VARCHAR(100) NOT NULL,
+    Description TEXT,
+    Price DECIMAL(10,2) NOT NULL,
+    Stock INT NOT NULL
 );
 
--- Criando a tabela de comentários
-CREATE TABLE "rede_social".comentarios (
-    comentario_id SERIAL PRIMARY KEY,
-    publicacao_id INTEGER NOT NULL,
-    usuario_id INTEGER NOT NULL,
-    conteudo TEXT NOT NULL,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (publicacao_id) REFERENCES rede_social.publicacoes(publicacao_id) ON DELETE CASCADE,
-    FOREIGN KEY (usuario_id) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE
+# Inserindo dados na tabela Product
+INSERT INTO Product (ProductName, Description, Price, Stock) 
+VALUES 
+('Smartphone', 'Latest model smartphone', 999.99, 25),
+('Tablet', '10-inch display tablet', 399.99, 40),
+('Smartwatch', 'Fitness tracking smartwatch', 199.99, 35),
+('Headphones', 'Noise-cancelling headphones', 149.99, 50),
+('Charger', 'Fast charging adapter', 29.99, 100);
+
+# Tabela Order
+CREATE TABLE "Order" (
+    OrderID SERIAL PRIMARY KEY,
+    CustomerID INT,
+    OrderDate DATE NOT NULL,
+    Total DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
 );
 
--- Criando a tabela de curtidas
-CREATE TABLE "rede_social".curtidas (
-    curtida_id SERIAL PRIMARY KEY,
-    publicacao_id INTEGER NOT NULL,
-    usuario_id INTEGER NOT NULL,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (publicacao_id) REFERENCES rede_social.publicacoes(publicacao_id) ON DELETE CASCADE,
-    FOREIGN KEY (usuario_id) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE,
-    UNIQUE (publicacao_id, usuario_id) -- Impede que um usuário curta a mesma publicação mais de uma vez
+# Inserindo dados na tabela Order
+INSERT INTO "Order" (CustomerID, OrderDate, Total) 
+VALUES 
+(1, '2024-01-01', 1249.98),
+(2, '2024-01-05', 29.99);
+
+# Tabela OrderItem
+CREATE TABLE OrderItem (
+    OrderItemID SERIAL PRIMARY KEY,
+    OrderID INT,
+    ProductID INT,
+    Quantity INT NOT NULL,
+    UnitPrice DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (OrderID) REFERENCES "Order"(OrderID),
+    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
 );
 
--- Criando a tabela de amizades
-CREATE TABLE "rede_social".amizades (
-    amizade_id SERIAL PRIMARY KEY,
-    usuario_id1 INTEGER NOT NULL,
-    usuario_id2 INTEGER NOT NULL,
-    status VARCHAR(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'aceita', 'recusada')),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id1) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE,
-    FOREIGN KEY (usuario_id2) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE,
-    UNIQUE (usuario_id1, usuario_id2) -- Impede duplicação de amizades
-);
-
--- Criando a tabela de mensagens privadas
-CREATE TABLE "rede_social".mensagens (
-    mensagem_id SERIAL PRIMARY KEY,
-    remetente_id INTEGER NOT NULL,
-    destinatario_id INTEGER NOT NULL,
-    conteudo TEXT NOT NULL,
-    enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    lido BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (remetente_id) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE,
-    FOREIGN KEY (destinatario_id) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE
-);
+# Inserindo dados na tabela OrderItem
+INSERT INTO OrderItem (OrderID, ProductID, Quantity, UnitPrice) 
+VALUES 
+(1, 1, 1, 999.99),
+(1, 2, 1, 399.99),
+(2, 5, 1, 29.99);
