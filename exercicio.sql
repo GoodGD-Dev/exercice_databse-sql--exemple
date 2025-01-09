@@ -1,69 +1,84 @@
--- Projeto: Estrutura de Banco de Dados (DDL)
--- Desenvolvedor: Autor Anônimo
-
 -- Criando o banco de dados
-CREATE DATABASE lojaDB;
+CREATE DATABASE redeSocialDB;
 
 -- Conectando ao banco de dados criado
-\c lojaDB;
+-- (Este comando funciona apenas em PostgreSQL, remova caso não seja necessário)
+-- \c redeSocialDB;
 
 -- Criando o esquema
-CREATE SCHEMA loja;
+CREATE SCHEMA rede_social;
 
--- Criando a tabela de clientes
-CREATE TABLE loja.clientes (
-    cliente_id SERIAL PRIMARY KEY,
+-- Criando a tabela de usuários
+CREATE TABLE "rede_social".usuarios (
+    usuario_id SERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    telefone VARCHAR(20),
-    documento VARCHAR(20) UNIQUE,
-    endereco VARCHAR(255),
+    senha_hash VARCHAR(255) NOT NULL,
+    data_nascimento DATE NOT NULL,
+    genero VARCHAR(50),
+    bio TEXT,
+    foto_perfil VARCHAR(255),
     cidade VARCHAR(100),
     estado VARCHAR(50),
-    codigo_postal VARCHAR(20),
-    data_nascimento DATE,
-    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'ativo'
-);
-
--- Criando a tabela de produtos
-CREATE TABLE loja.produtos (
-    produto_id SERIAL PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    descricao TEXT,
-    preco NUMERIC(10, 2) NOT NULL,
-    quantidade_estoque INTEGER NOT NULL,
-    sku VARCHAR(50) UNIQUE,
-    categoria VARCHAR(100),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'disponivel'
-);
-
--- Criando a tabela de fornecedores
-CREATE TABLE loja.fornecedores (
-    fornecedor_id SERIAL PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    contato VARCHAR(100),
-    telefone VARCHAR(20),
-    email VARCHAR(255) UNIQUE,
-    endereco VARCHAR(255),
-    cidade VARCHAR(100),
-    estado VARCHAR(50),
-    codigo_postal VARCHAR(20),
     pais VARCHAR(50),
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'ativo'
+    status VARCHAR(20) DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo', 'banido'))
 );
 
--- Criando a tabela de estoque
-CREATE TABLE loja.estoque (
-    estoque_id SERIAL PRIMARY KEY,
-    produto_id INTEGER NOT NULL,
-    quantidade INTEGER NOT NULL CHECK (quantidade >= 0),
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    localizacao VARCHAR(100),
-    fornecedor_id INTEGER,
-    limite_alerta INTEGER DEFAULT 10,
-    FOREIGN KEY (produto_id) REFERENCES loja.produtos(produto_id) ON DELETE CASCADE,
-    FOREIGN KEY (fornecedor_id) REFERENCES loja.fornecedores(fornecedor_id) ON DELETE SET NULL
+-- Criando a tabela de publicações
+CREATE TABLE "rede_social".publicacoes (
+    publicacao_id SERIAL PRIMARY KEY,
+    usuario_id INTEGER NOT NULL,
+    conteudo TEXT NOT NULL,
+    imagem VARCHAR(255),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP,
+    visibilidade VARCHAR(20) DEFAULT 'publico' CHECK (visibilidade IN ('publico', 'privado', 'amigos')),
+    FOREIGN KEY (usuario_id) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE
+);
+
+-- Criando a tabela de comentários
+CREATE TABLE "rede_social".comentarios (
+    comentario_id SERIAL PRIMARY KEY,
+    publicacao_id INTEGER NOT NULL,
+    usuario_id INTEGER NOT NULL,
+    conteudo TEXT NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (publicacao_id) REFERENCES rede_social.publicacoes(publicacao_id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE
+);
+
+-- Criando a tabela de curtidas
+CREATE TABLE "rede_social".curtidas (
+    curtida_id SERIAL PRIMARY KEY,
+    publicacao_id INTEGER NOT NULL,
+    usuario_id INTEGER NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (publicacao_id) REFERENCES rede_social.publicacoes(publicacao_id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE,
+    UNIQUE (publicacao_id, usuario_id) -- Impede que um usuário curta a mesma publicação mais de uma vez
+);
+
+-- Criando a tabela de amizades
+CREATE TABLE "rede_social".amizades (
+    amizade_id SERIAL PRIMARY KEY,
+    usuario_id1 INTEGER NOT NULL,
+    usuario_id2 INTEGER NOT NULL,
+    status VARCHAR(20) DEFAULT 'pendente' CHECK (status IN ('pendente', 'aceita', 'recusada')),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id1) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id2) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE,
+    UNIQUE (usuario_id1, usuario_id2) -- Impede duplicação de amizades
+);
+
+-- Criando a tabela de mensagens privadas
+CREATE TABLE "rede_social".mensagens (
+    mensagem_id SERIAL PRIMARY KEY,
+    remetente_id INTEGER NOT NULL,
+    destinatario_id INTEGER NOT NULL,
+    conteudo TEXT NOT NULL,
+    enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    lido BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (remetente_id) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE,
+    FOREIGN KEY (destinatario_id) REFERENCES rede_social.usuarios(usuario_id) ON DELETE CASCADE
 );
