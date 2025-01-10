@@ -67,3 +67,21 @@ VALUES
 (1, 1, 1, 999.99),
 (1, 2, 1, 399.99),
 (2, 5, 1, 29.99);
+
+-- Criando a tabela Stock
+CREATE TABLE Stock (
+    StockID SERIAL PRIMARY KEY,
+    ProductID INT NOT NULL,
+    Quantity INT NOT NULL,
+    LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+);
+
+-- Inserindo os dados de estoque baseados nos valores anteriores
+INSERT INTO Stock (ProductID, Quantity) 
+VALUES 
+(1, 25),  -- Smartphone
+(2, 40),  -- Tablet
+(3, 35),  -- Smartwatch
+(4, 50),  -- Headphones
+(5, 100); -- Charger
